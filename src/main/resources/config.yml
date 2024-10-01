@@ -1,0 +1,34 @@
+# Configuration for the BackupAccessor plugin
+
+# World path
+worldPath: "/home"
+
+# World backup paths (comma-separated list)
+worldBackupPaths:
+  - "/home/world_backup1"
+  - "/home/world_backup2"
+
+# Player backup paths (comma-separated list)
+playerBackupPaths:
+  - "/home/player_backup1"
+  - "/home/player_backup2"
+
+# Whether to get UUID from Mojang API
+getUUIDFromMojangAPI: true
+
+# Database configuration (only used if getUUIDFromMojangAPI is false)
+dbUsername: "user"
+dbPassword: "pass"
+dbName: "luckperms"
+dbAddress: "localhost"
+dbQuery: "SELECT uuid FROM players WHERE username = ? AND uuid IS NOT NULL ORDER BY uuid DESC LIMIT 1"
+
+# Dummy UUIDs
+dummyUUID0: "069a79f4-44e9-4726-a5be-fca90e38aaf5"
+dummyUUID1: "853c80ef-3c37-49fd-aa49-938b674adae6"
+dummyUUID2: "c7f0141d-f239-4ff3-8130-10cd0462c7a6"
+dummyUUID3: "b9583ca4-3e64-488a-9c8c-4ab27e482255"
+dummyUUID4: "0c5a016f-236c-4785-98ea-c5092a042b5f"
+dummyUUID5: "9c2ac958-5de9-45a8-8ca1-4122eb4c0b9e"
+dummyUUID6: "50c14e90-7478-44bf-adee-55fb0196efd5"
+dummyUUID7: "bacf0860-c190-4647-9d90-64dd18df8c45"

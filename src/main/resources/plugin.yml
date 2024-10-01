@@ -1,0 +1,49 @@
+name: BackupAccessor
+version: '1.0-SNAPSHOT'
+main: com.jellypudding.backupAccessor.BackupAccessor
+api-version: '1.21'
+description: "Access and manage backups in-game"
+author: AlphaAlex115
+
+commands:
+  backupaccessor:
+    description: "Access and manage backups in-game"
+    usage: "/backupaccessor <subcommand> [args]"
+    aliases: [ba]
+    permission: backupaccessor.use
+    permission-message: "You don't have permission to use BackupAccessor."
+
+permissions:
+  backupaccessor.use:
+    description: Allows use of the main BackupAccessor command
+    default: op
+  backupaccessor.select:
+    description: Allows selecting backups
+    default: op
+  backupaccessor.invsee:
+    description: Allows viewing backed up player inventories
+    default: op
+  backupaccessor.ecsee:
+    description: Allows viewing backed up player enderchests
+    default: op
+  backupaccessor.list:
+    description: Allows listing available backups
+    default: op
+  backupaccessor.import:
+    description: Allows importing backup regions
+    default: op
+  backupaccessor.create:
+    description: Allows creating the BackupAccessor world
+    default: op
+  backupaccessor.tp:
+    description: Allows teleporting to the BackupAccessor world
+    default: op
+  backupaccessor.tpb:
+    description: Allows teleporting back from the BackupAccessor world
+    default: op
+  backupaccessor.destroy:
+    description: Allows destroying the BackupAccessor world
+    default: op
+  backupaccessor.reload:
+    description: Allows reloading the plugin configuration
+    default: op
