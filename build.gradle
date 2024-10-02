@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'com.jellypudding'
@@ -19,6 +20,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
+    implementation 'org.apache.commons:commons-compress:1.21'
 }
 
 def targetJavaVersion = 21
@@ -45,5 +47,16 @@ processResources {
     filteringCharset 'UTF-8'
     filesMatching('plugin.yml') {
         expand props
+    }
+}
+
+tasks {
+    shadowJar {
+        // Optionally, relocate packages to avoid conflicts
+        // relocate 'org.apache.commons.compress', 'com.jellypudding.libs.org.apache.commons.compress'
+    }
+
+    build {
+        dependsOn shadowJar
     }
 }

@@ -89,7 +89,6 @@ public class SelectCommand implements CommandExecutor, TabCompleter {
 
     private void reportSuccess(CommandSender sender, String backupName, BackupType backupType) {
         String fileType = FileFunctions.getFileType(backupType);
-        String tarDirectory = backupType == BackupType.WORLD ? FileFunctions.getTarDirectoryWorld() : FileFunctions.getTarDirectoryPlayer();
 
         Component successMessage;
         if ("directory".equals(fileType)) {
@@ -103,8 +102,15 @@ public class SelectCommand implements CommandExecutor, TabCompleter {
                         .append(Component.text(FileFunctions.getSelectedPlayerBackup(), NamedTextColor.GOLD));
             }
         } else {
-            successMessage = Component.text("Successfully found " + backupType.name().toLowerCase() + " backup inside the " + fileType + " file\n", NamedTextColor.GREEN)
-                    .append(Component.text(backupName + ": " + tarDirectory, NamedTextColor.GOLD));
+            if (backupType == BackupType.WORLD) {
+                successMessage = Component.text("Successfully found world backup in " + fileType + " file:\n", NamedTextColor.GREEN)
+                        .append(formatDimensionInfo("Overworld", FileFunctions.getTarDirectoryWorld()))
+                        .append(formatDimensionInfo("Nether", FileFunctions.getTarDirectoryNether()))
+                        .append(formatDimensionInfo("End", FileFunctions.getTarDirectoryEnd()));
+            } else {
+                successMessage = Component.text("Successfully found player backup in " + fileType + " file:\n", NamedTextColor.GREEN)
+                        .append(Component.text(FileFunctions.getTarDirectoryPlayer(), NamedTextColor.GOLD));
+            }
         }
 
         sender.sendMessage(successMessage);
@@ -121,6 +127,10 @@ public class SelectCommand implements CommandExecutor, TabCompleter {
 
         String locationDescription = "directory".equals(fileType) ? " within the directory " : " within the " + fileType + " file ";
         sender.sendMessage(Component.text("Failed to find " + folderDescription + locationDescription + backupName, NamedTextColor.RED));
+
+        if (backupType == BackupType.WORLD && !"directory".equals(fileType)) {
+            sender.sendMessage(Component.text("Note: For world backups, at least one dimension (Overworld, Nether, or End) must be found.", NamedTextColor.YELLOW));
+        }
     }
 
     private Component formatDimensionInfo(String dimensionName, String path) {
