@@ -95,9 +95,9 @@ public class SelectCommand implements CommandExecutor, TabCompleter {
         if ("directory".equals(fileType)) {
             if (backupType == BackupType.WORLD) {
                 successMessage = Component.text("Successfully found world backup:\n", NamedTextColor.GREEN)
-                        .append(Component.text("Overworld: " + FileFunctions.getSelectedWorldBackup() + "\n", NamedTextColor.GOLD))
-                        .append(Component.text("Nether: " + FileFunctions.getSelectedNetherBackup() + "\n", NamedTextColor.GOLD))
-                        .append(Component.text("End: " + FileFunctions.getSelectedEndBackup(), NamedTextColor.GOLD));
+                        .append(formatDimensionInfo("Overworld", FileFunctions.getSelectedWorldBackup()))
+                        .append(formatDimensionInfo("Nether", FileFunctions.getSelectedNetherBackup()))
+                        .append(formatDimensionInfo("End", FileFunctions.getSelectedEndBackup()));
             } else {
                 successMessage = Component.text("Successfully found player backup:\n", NamedTextColor.GREEN)
                         .append(Component.text(FileFunctions.getSelectedPlayerBackup(), NamedTextColor.GOLD));
@@ -121,5 +121,14 @@ public class SelectCommand implements CommandExecutor, TabCompleter {
 
         String locationDescription = "directory".equals(fileType) ? " within the directory " : " within the " + fileType + " file ";
         sender.sendMessage(Component.text("Failed to find " + folderDescription + locationDescription + backupName, NamedTextColor.RED));
+    }
+
+    private Component formatDimensionInfo(String dimensionName, String path) {
+        if (path == null || path.isEmpty()) {
+            return Component.text(dimensionName + ": Not found\n", NamedTextColor.RED);
+        } else {
+            return Component.text(dimensionName + ": ", NamedTextColor.GREEN)
+                    .append(Component.text(path + "\n", NamedTextColor.GOLD));
+        }
     }
 }
