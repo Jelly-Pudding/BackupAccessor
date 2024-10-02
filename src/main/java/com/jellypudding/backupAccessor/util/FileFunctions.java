@@ -187,7 +187,7 @@ public class FileFunctions {
             // Player backup validation
             for (File file : listOfFiles) {
                 if (isValidDirectory(file, acceptedFolders)) {
-                    selectedPlayerBackup = file.getAbsolutePath();
+                    selectedPlayerBackup = file.getAbsolutePath() + File.separator;
                     return true;
                 }
                 if (file.isDirectory() && validateDirectoryBackup(sender, backupType, file.getAbsolutePath(), acceptedFolders)) {
@@ -210,18 +210,18 @@ public class FileFunctions {
         for (File file : listOfFiles) {
             if (file.isDirectory()) {
                 if (file.getName().equals("region") && selectedWorldBackup.isEmpty()) {
-                    selectedWorldBackup = file.getAbsolutePath();
+                    selectedWorldBackup = file.getAbsolutePath() + File.separator;
                     found = true;
                 } else if (file.getName().equals("DIM-1") && selectedNetherBackup.isEmpty()) {
                     File netherRegion = new File(file, "region");
                     if (netherRegion.exists() && netherRegion.isDirectory()) {
-                        selectedNetherBackup = netherRegion.getAbsolutePath();
+                        selectedNetherBackup = netherRegion.getAbsolutePath() + File.separator;
                         found = true;
                     }
                 } else if (file.getName().equals("DIM1") && selectedEndBackup.isEmpty()) {
                     File endRegion = new File(file, "region");
                     if (endRegion.exists() && endRegion.isDirectory()) {
-                        selectedEndBackup = endRegion.getAbsolutePath();
+                        selectedEndBackup = endRegion.getAbsolutePath() + File.separator;
                         found = true;
                     }
                 } else if (!selectedWorldBackup.isEmpty() && !selectedNetherBackup.isEmpty() && !selectedEndBackup.isEmpty()) {
@@ -321,17 +321,17 @@ public class FileFunctions {
         switch (backupType) {
             case WORLD:
                 if (entry.getName().contains("DIM-1")) {
-                    tarDirectoryNether = parentPath;
+                    tarDirectoryNether = parentPath + "region" + File.separator;
                     return "nether";
                 } else if (entry.getName().contains("DIM1")) {
-                    tarDirectoryEnd = parentPath;
+                    tarDirectoryEnd = parentPath + "region" + File.separator;
                     return "end";
                 } else {
-                    tarDirectoryWorld = parentPath;
+                    tarDirectoryWorld = parentPath + "region" + File.separator;
                     return "world";
                 }
             case PLAYER:
-                tarDirectoryPlayer = parentPath;
+                tarDirectoryPlayer = parentPath + "playerdata" + File.separator;
                 return "player";
             default:
                 throw new IllegalArgumentException("Unexpected backup type: " + backupType);
@@ -392,6 +392,10 @@ public class FileFunctions {
         selectedNetherBackup = "";
         selectedEndBackup = "";
         selectedPlayerBackup = "";
+        tarDirectoryWorld = "";
+        tarDirectoryNether = "";
+        tarDirectoryEnd = "";
+        tarDirectoryPlayer = "";
     }
 
     public static String getSelectedWorldBackup() { return selectedWorldBackup; }
