@@ -1,5 +1,6 @@
 package com.jellypudding.backupAccessor.commands;
 
+import com.jellypudding.backupAccessor.util.BackupType;
 import com.jellypudding.backupAccessor.util.FileFunctions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -22,10 +23,10 @@ public class ListCommand implements CommandExecutor, TabCompleter {
         }
 
         String backupTypeArg = args[1].toLowerCase();
-        FileFunctions.BackupType backupType;
+        BackupType backupType;
 
         try {
-            backupType = FileFunctions.BackupType.valueOf(backupTypeArg.toUpperCase());
+            backupType = BackupType.valueOf(backupTypeArg.toUpperCase());
         } catch (IllegalArgumentException e) {
             sender.sendMessage(Component.text("Invalid backup type. Use 'world' or 'player'.", NamedTextColor.RED));
             return true;

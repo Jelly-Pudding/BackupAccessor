@@ -1,6 +1,8 @@
 package com.jellypudding.backupAccessor;
 
 import com.jellypudding.backupAccessor.commands.ListCommand;
+import com.jellypudding.backupAccessor.commands.SelectCommand;
+import com.jellypudding.backupAccessor.util.BackupType;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -17,6 +19,7 @@ public final class BackupAccessor extends JavaPlugin {
 
     private static BackupAccessor instance;
     private ListCommand listCommand;
+    private SelectCommand selectCommand;
     private String worldPath;
     private List<String> worldBackupPaths;
     private List<String> playerBackupPaths;
@@ -34,6 +37,7 @@ public final class BackupAccessor extends JavaPlugin {
         saveDefaultConfig();
         loadConfigValues();
         this.listCommand = new ListCommand();
+        this.selectCommand = new SelectCommand(this);
 
         // Unload and delete BackupAccessor world if it exists
         // Note: You'll need to implement this WorldFunctions class
@@ -78,14 +82,14 @@ public final class BackupAccessor extends JavaPlugin {
             String subCommand = args[0].toLowerCase();
             switch (subCommand) {
                 case "select":
-                    return handleSelectCommand(sender, args);
+                    return handleSelectCommand(sender, command, label, args);
                 case "invsee":
                     return handleInvseeCommand(sender, args);
                 case "ecsee":
                 case "endersee":
                     return handleEcseeCommand(sender, args);
                 case "list":
-                    return handleListCommand(sender, args);
+                    return handleListCommand(sender, command, label, args);
                 case "import":
                     return handleImportCommand(sender, args);
                 case "create":
@@ -113,26 +117,29 @@ public final class BackupAccessor extends JavaPlugin {
                 List<String> subCommands = List.of("select", "invsee", "ecsee", "list", "import", "create", "tp", "tpb", "destroy", "reload");
                 return subCommands.stream()
                         .filter(sc -> sc.startsWith(args[0].toLowerCase()))
-                        .toList();
-            } else if (args.length == 2 && args[0].equalsIgnoreCase("list")) {
-                return listCommand.onTabComplete(sender, command, alias, args);
+                        .collect(java.util.stream.Collectors.toList());
+            } else if (args.length >= 2) {
+                switch (args[0].toLowerCase()) {
+                    case "list":
+                        return listCommand.onTabComplete(sender, command, alias, args);
+                    case "select":
+                        return selectCommand.onTabComplete(sender, command, alias, args);
+                    // ... (other cases for future commands)
+                }
             }
         }
         return new ArrayList<>();
     }
 
-    private boolean handleSelectCommand(CommandSender sender, String[] args) {
-        // Implement select command logic
+    private boolean handleSelectCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage("You must be a player to use this command!");
             return true;
         }
-        sender.sendMessage("Select command not implemented yet.");
-        return true;
+        return selectCommand.onCommand(sender, command, label, args);
     }
 
     private boolean handleInvseeCommand(CommandSender sender, String[] args) {
-        // Implement invsee command logic
         if (!(sender instanceof Player)) {
             sender.sendMessage("You must be a player to use this command!");
             return true;
@@ -142,7 +149,6 @@ public final class BackupAccessor extends JavaPlugin {
     }
 
     private boolean handleEcseeCommand(CommandSender sender, String[] args) {
-        // Implement ecsee command logic
         if (!(sender instanceof Player)) {
             sender.sendMessage("You must be a player to use this command!");
             return true;
@@ -151,8 +157,8 @@ public final class BackupAccessor extends JavaPlugin {
         return true;
     }
 
-    private boolean handleListCommand(CommandSender sender, String[] args) {
-        return listCommand.onCommand(sender, null, "backupaccessor", args);
+    private boolean handleListCommand(CommandSender sender, Command command, String label, String[] args) {
+        return listCommand.onCommand(sender, command, label, args);
     }
 
     private boolean handleImportCommand(CommandSender sender, String[] args) {
@@ -160,7 +166,6 @@ public final class BackupAccessor extends JavaPlugin {
             sender.sendMessage("You must be a player to use this command!");
             return true;
         }
-        // Implement import command logic
         sender.sendMessage("Import command not implemented yet.");
         return true;
     }
@@ -170,7 +175,6 @@ public final class BackupAccessor extends JavaPlugin {
             sender.sendMessage("You must be a player to use this command!");
             return true;
         }
-        // Implement create command logic
         sender.sendMessage("Create command not implemented yet.");
         return true;
     }
@@ -180,7 +184,6 @@ public final class BackupAccessor extends JavaPlugin {
             sender.sendMessage("You must be a player to use this command!");
             return true;
         }
-        // Implement tp command logic
         sender.sendMessage("Tp command not implemented yet.");
         return true;
     }
@@ -190,13 +193,11 @@ public final class BackupAccessor extends JavaPlugin {
             sender.sendMessage("You must be a player to use this command!");
             return true;
         }
-        // Implement tpb command logic
         sender.sendMessage("Tpb command not implemented yet.");
         return true;
     }
 
     private boolean handleDestroyCommand(CommandSender sender, String[] args) {
-        // Implement destroy command logic
         sender.sendMessage("Destroy command not implemented yet.");
         return true;
     }
