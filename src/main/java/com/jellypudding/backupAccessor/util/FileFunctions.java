@@ -155,7 +155,6 @@ public class FileFunctions {
     }
 
     public static boolean validateBackupContentAndSetPath(CommandSender sender, BackupType backupType, String directory, String[] acceptedFolders) {
-        resetSelectedBackups();
         if (isDirectoryBackup(backupType)) {
             return validateDirectoryBackup(sender, backupType, directory, acceptedFolders);
         } else {
@@ -206,31 +205,44 @@ public class FileFunctions {
         }
 
         boolean found = false;
+        boolean worldFound = false;
+        boolean netherFound = false;
+        boolean endFound = false;
 
         for (File file : listOfFiles) {
             if (file.isDirectory()) {
-                if (file.getName().equals("region") && selectedWorldBackup.isEmpty()) {
+                if (file.getName().equals("region") && !worldFound) {
                     selectedWorldBackup = file.getAbsolutePath() + File.separator;
+                    worldFound = true;
                     found = true;
-                } else if (file.getName().equals("DIM-1") && selectedNetherBackup.isEmpty()) {
+                } else if (file.getName().equals("DIM-1") && !netherFound) {
                     File netherRegion = new File(file, "region");
                     if (netherRegion.exists() && netherRegion.isDirectory()) {
                         selectedNetherBackup = netherRegion.getAbsolutePath() + File.separator;
+                        netherFound = true;
                         found = true;
                     }
-                } else if (file.getName().equals("DIM1") && selectedEndBackup.isEmpty()) {
+                } else if (file.getName().equals("DIM1") && !endFound) {
                     File endRegion = new File(file, "region");
                     if (endRegion.exists() && endRegion.isDirectory()) {
                         selectedEndBackup = endRegion.getAbsolutePath() + File.separator;
+                        endFound = true;
                         found = true;
                     }
-                } else if (!selectedWorldBackup.isEmpty() && !selectedNetherBackup.isEmpty() && !selectedEndBackup.isEmpty()) {
+                } else if (worldFound && netherFound && endFound) {
                     return true; // All three dimensions found, no need to continue searching
                 } else if (!file.getName().equals("playerdata")) {
                     boolean subDirFound = searchWorldBackup(file);
                     found = found || subDirFound;
                 }
             }
+        }
+
+        // If at least one dimension was found, set the others to empty strings if not found
+        if (found) {
+            if (!worldFound) selectedWorldBackup = "";
+            if (!netherFound) selectedNetherBackup = "";
+            if (!endFound) selectedEndBackup = "";
         }
 
         return found;
@@ -273,6 +285,13 @@ public class FileFunctions {
                         return true; // For player backups, we only need to find one valid entry
                     }
                 }
+            }
+
+            // If at least one dimension was found, set the others to empty strings if not found
+            if (anyFound) {
+                if (!worldFound) tarDirectoryWorld = "";
+                if (!netherFound) tarDirectoryNether = "";
+                if (!endFound) tarDirectoryEnd = "";
             }
 
             return anyFound; // For world backups, return true if any dimension was found
@@ -385,17 +404,6 @@ public class FileFunctions {
             if (tarBz2FilePlayer) return "tar.bz2";
         }
         return "directory";
-    }
-
-    private static void resetSelectedBackups() {
-        selectedWorldBackup = "";
-        selectedNetherBackup = "";
-        selectedEndBackup = "";
-        selectedPlayerBackup = "";
-        tarDirectoryWorld = "";
-        tarDirectoryNether = "";
-        tarDirectoryEnd = "";
-        tarDirectoryPlayer = "";
     }
 
     public static String getSelectedWorldBackup() { return selectedWorldBackup; }
