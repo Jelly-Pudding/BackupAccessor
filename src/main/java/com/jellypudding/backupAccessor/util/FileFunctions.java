@@ -2,13 +2,18 @@ package com.jellypudding.backupAccessor.util;
 
 import com.jellypudding.backupAccessor.BackupAccessor;
 
+import com.jellypudding.backupAccessor.commands.ImportCommand;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.utils.IOUtils;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import org.bukkit.command.CommandSender;
 
@@ -22,6 +27,10 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -112,6 +121,25 @@ public class FileFunctions {
         }
     }
 
+    public static boolean checkWorldPath(Player player) {
+        File worldPathFile = new File(BackupAccessor.getInstance().getWorldPath());
+        if (worldPathFile.exists()) {
+            File[] listOfFiles = worldPathFile.listFiles();
+            if (listOfFiles != null) {
+                for (File file : listOfFiles) {
+                    if (file.isDirectory() && (file.getName().equals("world") || file.getName().equals("world_nether") || file.getName().equals("world_the_end"))) {
+                        // This worldPath is most likely correct.
+                        return true;
+                    }
+                }
+            }
+            player.sendMessage(Component.text("The worldPath provided in config.yml does not appear to be correct.", NamedTextColor.DARK_RED));
+        } else {
+            player.sendMessage(Component.text("The worldPath provided in config.yml does not exist.", NamedTextColor.DARK_RED));
+        }
+        return false;
+    }
+
     public static boolean verifyAndSetBackupType(String playerGivenName, BackupType backupType) {
         List<String> backupPaths = backupType == BackupType.WORLD ?
                 BackupAccessor.getInstance().getWorldBackupPaths() :
@@ -199,53 +227,69 @@ public class FileFunctions {
     }
 
     private static boolean searchWorldBackup(File folder) {
-        File[] listOfFiles = folder.listFiles();
-        if (listOfFiles == null) {
-            return false;
-        }
+        // Use a stack to process directories iteratively
+        Stack<File> stack = new Stack<>();
+        stack.push(folder);
 
-        boolean found = false;
-        boolean worldFound = false;
-        boolean netherFound = false;
-        boolean endFound = false;
+        // Local variables to track which dimensions were found
+        boolean foundOverworld = false;
+        boolean foundNether = false;
+        boolean foundEnd = false;
 
-        for (File file : listOfFiles) {
-            if (file.isDirectory()) {
-                if (file.getName().equals("region") && !worldFound) {
-                    selectedWorldBackup = file.getAbsolutePath() + File.separator;
-                    worldFound = true;
-                    found = true;
-                } else if (file.getName().equals("DIM-1") && !netherFound) {
-                    File netherRegion = new File(file, "region");
-                    if (netherRegion.exists() && netherRegion.isDirectory()) {
-                        selectedNetherBackup = netherRegion.getAbsolutePath() + File.separator;
-                        netherFound = true;
-                        found = true;
+        // Keep track if any dimension was found
+        boolean anyDimensionFound = false;
+
+        while (!stack.isEmpty()) {
+            File currentFolder = stack.pop();
+            File[] listOfFiles = currentFolder.listFiles();
+
+            if (listOfFiles == null) {
+                continue;
+            }
+
+            for (File file : listOfFiles) {
+                if (file.isDirectory()) {
+                    String fileName = file.getName();
+                    if (fileName.equals("region")) {
+                        selectedWorldBackup = file.getAbsolutePath() + File.separator;
+                        foundOverworld = true;
+                        anyDimensionFound = true;
+                    } else if (fileName.equals("DIM-1")) {
+                        File netherRegion = new File(file, "region");
+                        if (netherRegion.exists() && netherRegion.isDirectory()) {
+                            selectedNetherBackup = netherRegion.getAbsolutePath() + File.separator;
+                            foundNether = true;
+                            anyDimensionFound = true;
+                        }
+                    } else if (fileName.equals("DIM1")) {
+                        File endRegion = new File(file, "region");
+                        if (endRegion.exists() && endRegion.isDirectory()) {
+                            selectedEndBackup = endRegion.getAbsolutePath() + File.separator;
+                            foundEnd = true;
+                            anyDimensionFound = true;
+                        }
+                    } else if (!fileName.equals("playerdata")) {
+                        stack.push(file);
                     }
-                } else if (file.getName().equals("DIM1") && !endFound) {
-                    File endRegion = new File(file, "region");
-                    if (endRegion.exists() && endRegion.isDirectory()) {
-                        selectedEndBackup = endRegion.getAbsolutePath() + File.separator;
-                        endFound = true;
-                        found = true;
-                    }
-                } else if (worldFound && netherFound && endFound) {
-                    return true; // All three dimensions found, no need to continue searching
-                } else if (!file.getName().equals("playerdata")) {
-                    boolean subDirFound = searchWorldBackup(file);
-                    found = found || subDirFound;
                 }
             }
         }
 
-        // If at least one dimension was found, set the others to empty strings if not found
-        if (found) {
-            if (!worldFound) selectedWorldBackup = "";
-            if (!netherFound) selectedNetherBackup = "";
-            if (!endFound) selectedEndBackup = "";
+        // After the search, if at least one dimension was found, set missing ones to empty strings
+        if (anyDimensionFound) {
+            if (!foundOverworld) {
+                selectedWorldBackup = "";
+            }
+            if (!foundNether) {
+                selectedNetherBackup = "";
+            }
+            if (!foundEnd) {
+                selectedEndBackup = "";
+            }
         }
 
-        return found;
+        // Return true if any dimension was found
+        return anyDimensionFound;
     }
 
     private static boolean isValidDirectory(File file, String[] acceptedFolders) {
@@ -406,6 +450,14 @@ public class FileFunctions {
         return "directory";
     }
 
+    public static boolean isTarBackup(BackupType backupType) {
+        if (backupType == BackupType.WORLD) {
+            return tarFileWorld || tarCompressedFileWorld || tarBz2FileWorld;
+        } else {
+            return tarFilePlayer || tarCompressedFilePlayer || tarBz2FilePlayer;
+        }
+    }
+
     public static String getSelectedWorldBackup() { return selectedWorldBackup; }
     public static String getSelectedNetherBackup() { return selectedNetherBackup; }
     public static String getSelectedEndBackup() { return selectedEndBackup; }
@@ -414,6 +466,140 @@ public class FileFunctions {
     public static String getTarDirectoryNether() { return tarDirectoryNether; }
     public static String getTarDirectoryEnd() { return tarDirectoryEnd; }
     public static String getTarDirectoryPlayer() { return tarDirectoryPlayer; }
+
+
+    public static boolean deleteDirectory(File directoryToBeDeleted) {
+        File[] allContents = directoryToBeDeleted.listFiles();
+        if (allContents != null) {
+            for (File file : allContents) {
+                deleteDirectory(file);
+            }
+        }
+        return directoryToBeDeleted.delete();
+    }
+
+
+
+    public static boolean transferFiles(Player player, BackupType backupType, String selectedBackup, List<String> files, String type, String dummyUUID) {
+        if (backupType == BackupType.WORLD) {
+            // Creates parent directories if they do not already exist.
+            new File(BackupAccessor.getInstance().getWorldPath() + "/BackupAccessor/region").mkdirs();
+        }
+
+        boolean allSuccessful = true;
+        try {
+            for (String file : files) {
+                File source = new File(selectedBackup + file);
+                File destination = new File(BackupAccessor.getInstance().getWorldPath() +
+                        (backupType == BackupType.WORLD ? "/BackupAccessor/region/" + file : "/playerdata/" + dummyUUID + ".dat"));
+                if (source.exists()) {
+                    Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                } else {
+                    player.sendMessage(Component.text("Error: The " + type + " file (" + source.getAbsolutePath() + ") does not exist.").color(NamedTextColor.RED));
+                    allSuccessful = false;
+                    break;
+                }
+            }
+
+            if (allSuccessful) {
+                if (backupType == BackupType.WORLD) {
+                    ImportCommand.updateExtentsForImportedRegions(files);
+                }
+                player.sendMessage(Component.text("Done!").color(NamedTextColor.GREEN));
+            }
+        } catch (IOException e) {
+            player.sendMessage(Component.text("Copy file error: " + e.getMessage()).color(NamedTextColor.RED));
+            allSuccessful = false;
+        }
+        return allSuccessful;
+    }
+
+    public static void transferFromTar(Player player, BackupType backupType, String desiredDirectory, List<String> desiredFiles, String targetName, String dummyUUID, boolean enderChest) {
+        String selectedDirectory = backupType == BackupType.WORLD ? selectedWorldBackup : selectedPlayerBackup;
+
+        Bukkit.getScheduler().runTaskAsynchronously(BackupAccessor.getInstance(), () -> {
+            boolean done = processTarFile(player, backupType, selectedDirectory, desiredDirectory, desiredFiles, dummyUUID);
+            postProcessTransfer(player, done, backupType, targetName, dummyUUID, enderChest);
+        });
+    }
+
+    private static boolean processTarFile(Player player, BackupType backupType, String tarFilePath, String desiredDirectory, List<String> desiredFiles, String dummyUUID) {
+        try (TarArchiveInputStream tarInput = createTarInputStream(player, backupType, tarFilePath)) {
+            if (tarInput == null) {
+                return false;
+            }
+
+            File tempDir = new File(BackupAccessor.getInstance().getDataFolder(), "temp_" + System.currentTimeMillis());
+            tempDir.mkdirs();
+
+            Set<String> filesToTransfer = new HashSet<>(desiredFiles);
+            TarArchiveEntry entry;
+            while ((entry = tarInput.getNextTarEntry()) != null && !filesToTransfer.isEmpty()) {
+                String entryName = entry.getName();
+                for (String desiredFile : filesToTransfer) {
+                    if (entryName.equals(desiredDirectory + desiredFile)) {
+                        String destination = backupType == BackupType.WORLD ?
+                                "/BackupAccessor/region/" + desiredFile :
+                                "/playerdata/" + dummyUUID + ".dat";
+                        if (!extractAndCopyFile(player, backupType, tempDir, tarInput, entry, destination)) {
+                            return false;
+                        }
+                        filesToTransfer.remove(desiredFile);
+                        break;
+                    }
+                }
+            }
+
+            if (!filesToTransfer.isEmpty()) {
+                player.sendMessage(Component.text("Error: Some files were not found in the tar archive.").color(NamedTextColor.RED));
+                return false;
+            }
+
+            if (backupType == BackupType.WORLD) {
+                ImportCommand.updateExtentsForImportedRegions(desiredFiles);
+            }
+
+            return true;
+        } catch (IOException e) {
+            player.sendMessage(Component.text("Error processing tar file: " + e.getMessage()).color(NamedTextColor.RED));
+            return false;
+        }
+    }
+
+    private static boolean extractAndCopyFile(Player player, BackupType backupType, File tempDir, TarArchiveInputStream tarInput, TarArchiveEntry entry, String destination) throws IOException {
+        File outputFile = new File(tempDir, entry.getName());
+        outputFile.getParentFile().mkdirs();
+
+        try (OutputStream outputFileStream = new FileOutputStream(outputFile)) {
+            IOUtils.copy(tarInput, outputFileStream);
+        }
+
+        File destinationFile = new File(BackupAccessor.getInstance().getWorldPath() + destination);
+        destinationFile.getParentFile().mkdirs();
+        Files.copy(outputFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        player.sendMessage(Component.text("Imported the " + backupType.name().toLowerCase() + " file " + entry.getName()).color(NamedTextColor.GREEN));
+        return true;
+    }
+
+    private static void postProcessTransfer(Player player, boolean done, BackupType backupType, String targetName, String dummyUUID, boolean enderChest) {
+        if (!done) {
+            ImportCommand.completeImport(player);
+            return;
+        }
+
+        Bukkit.getScheduler().runTask(BackupAccessor.getInstance(), () -> {
+            if (backupType == BackupType.WORLD) {
+                player.sendMessage(Component.text("Finished importing regions!").color(NamedTextColor.GREEN));
+                if (WorldFunctions.doesBackupAccessorWorldExist()) {
+                    WorldFunctions.loadBackupAccessorWorldAndAdjustBorder(player, true);
+                }
+            } else {
+                // Handle player inventory viewing here
+            }
+            ImportCommand.completeImport(player);
+        });
+    }
 
 
 }

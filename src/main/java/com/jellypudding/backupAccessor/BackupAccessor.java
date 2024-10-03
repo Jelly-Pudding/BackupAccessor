@@ -2,6 +2,7 @@ package com.jellypudding.backupAccessor;
 
 import com.jellypudding.backupAccessor.commands.ListCommand;
 import com.jellypudding.backupAccessor.commands.SelectCommand;
+import com.jellypudding.backupAccessor.commands.ImportCommand;
 import com.jellypudding.backupAccessor.util.BackupType;
 
 import org.bukkit.Bukkit;
@@ -20,6 +21,7 @@ public final class BackupAccessor extends JavaPlugin {
     private static BackupAccessor instance;
     private ListCommand listCommand;
     private SelectCommand selectCommand;
+    private ImportCommand importCommand;
     private String worldPath;
     private List<String> worldBackupPaths;
     private List<String> playerBackupPaths;
@@ -38,6 +40,7 @@ public final class BackupAccessor extends JavaPlugin {
         loadConfigValues();
         this.listCommand = new ListCommand();
         this.selectCommand = new SelectCommand(this);
+        this.importCommand = new ImportCommand(this);
 
         // Unload and delete BackupAccessor world if it exists
         // Note: You'll need to implement this WorldFunctions class
@@ -166,8 +169,7 @@ public final class BackupAccessor extends JavaPlugin {
             sender.sendMessage("You must be a player to use this command!");
             return true;
         }
-        sender.sendMessage("Import command not implemented yet.");
-        return true;
+        return importCommand.onCommand((Player) sender, args);
     }
 
     private boolean handleCreateCommand(CommandSender sender, String[] args) {

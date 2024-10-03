@@ -50,6 +50,11 @@ public class SelectCommand implements CommandExecutor, TabCompleter {
         String selectedBackup = backupType == BackupType.WORLD ? FileFunctions.getSelectedWorldBackup() : FileFunctions.getSelectedPlayerBackup();
 
         if (FileFunctions.validateBackupContentAndSetPath(sender, backupType, selectedBackup, searchFolders)) {
+            System.out.println("After validation:");
+            System.out.println("selectedWorldBackup: " + FileFunctions.getSelectedWorldBackup());
+            System.out.println("selectedNetherBackup: " + FileFunctions.getSelectedNetherBackup());
+            System.out.println("selectedEndBackup: " + FileFunctions.getSelectedEndBackup());
+
             reportSuccess(sender, selectedBackup, backupType);
         } else {
             reportFailure(sender, selectedBackup, backupType, searchFolders);
