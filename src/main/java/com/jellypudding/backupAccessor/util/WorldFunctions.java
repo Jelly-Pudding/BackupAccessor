@@ -29,16 +29,13 @@ public class WorldFunctions {
     }
 
     public static boolean isBackupAccessorWorldLoaded() {
-        World world = Bukkit.getWorld(BACKUP_WORLD_NAME);
-        if (world == null) {
-            return false;
-        }
-        return world.getLoadedChunks().length > 0;
+        return Bukkit.getWorld(BACKUP_WORLD_NAME) != null;
     }
 
     public static void createBackupAccessorWorld(Player player) {
         if (doesBackupAccessorWorldExist()) {
             player.sendMessage(Component.text("BackupAccessor world already exists.").color(NamedTextColor.RED));
+            loadBackupAccessorWorldAndAdjustBorder(player, true);
             return;
         }
 
@@ -54,7 +51,7 @@ public class WorldFunctions {
             // This creates a completely empty world
         });
         creator.generatorSettings("{\"structures\": {\"structures\": {}}, \"layers\": [{\"block\": \"air\", \"height\": 1}], \"biome\":\"the_void\"}");
-        creator.keepSpawnLoaded(TriState.FALSE);
+        creator.keepSpawnLoaded(TriState.TRUE);
         creator.hardcore(false);
 
         World world = creator.createWorld();
@@ -69,23 +66,29 @@ public class WorldFunctions {
     }
 
     public static void loadBackupAccessorWorldAndAdjustBorder(Player player, boolean verbose) {
-        if (doesBackupAccessorWorldExist()) {
-            World world = Bukkit.getWorld(BACKUP_WORLD_NAME);
-            if (world == null) {
-                world = Bukkit.createWorld(new WorldCreator(BACKUP_WORLD_NAME));
+        if (!doesBackupAccessorWorldExist()) {
+            if (verbose) {
+                player.sendMessage(Component.text("BackupAccessor world does not exist. Creating it now...").color(NamedTextColor.YELLOW));
             }
-            if (world != null) {
-                adjustWorldBorderForBackupAccessor(world);
-                if (verbose) {
-                    player.sendMessage(Component.text("Successfully loaded BackupAccessor world.").color(NamedTextColor.GREEN));
-                }
-            } else {
-                player.sendMessage(Component.text("Failed to load BackupAccessor world.").color(NamedTextColor.RED));
+            createBackupAccessorWorld(player);
+            return;
+        }
+
+        World world = Bukkit.getWorld(BACKUP_WORLD_NAME);
+        if (world == null) {
+            world = Bukkit.createWorld(new WorldCreator(BACKUP_WORLD_NAME));
+        }
+
+        if (world != null) {
+            adjustWorldBorderForBackupAccessor(world);
+            if (verbose) {
+                player.sendMessage(Component.text("Successfully loaded BackupAccessor world.").color(NamedTextColor.GREEN));
             }
-        } else if (verbose) {
-            player.sendMessage(Component.text("BackupAccessor world does not exist.").color(NamedTextColor.RED));
+        } else {
+            player.sendMessage(Component.text("Failed to load BackupAccessor world.").color(NamedTextColor.RED));
         }
     }
+
 
     public static void unloadThenDeleteBackupAccessor(CommandSender sender) {
         World world = Bukkit.getWorld(BACKUP_WORLD_NAME);

@@ -1,8 +1,6 @@
 package com.jellypudding.backupAccessor;
 
-import com.jellypudding.backupAccessor.commands.ListCommand;
-import com.jellypudding.backupAccessor.commands.SelectCommand;
-import com.jellypudding.backupAccessor.commands.ImportCommand;
+import com.jellypudding.backupAccessor.commands.*;
 import com.jellypudding.backupAccessor.util.WorldFunctions;
 import com.jellypudding.backupAccessor.util.BackupType;
 
@@ -23,6 +21,8 @@ public final class BackupAccessor extends JavaPlugin {
     private ListCommand listCommand;
     private SelectCommand selectCommand;
     private ImportCommand importCommand;
+    private TpCommand tpCommand;
+    private TpbCommand tpbCommand;
     private String worldPath;
     private List<String> worldBackupPaths;
     private List<String> playerBackupPaths;
@@ -42,6 +42,8 @@ public final class BackupAccessor extends JavaPlugin {
         this.listCommand = new ListCommand();
         this.selectCommand = new SelectCommand(this);
         this.importCommand = new ImportCommand(this);
+        this.tpCommand = new TpCommand(this);
+        this.tpbCommand = new TpbCommand(this);
 
         WorldFunctions.unloadThenDeleteBackupAccessor(Bukkit.getConsoleSender());
 
@@ -185,8 +187,7 @@ public final class BackupAccessor extends JavaPlugin {
             sender.sendMessage("You must be a player to use this command!");
             return true;
         }
-        sender.sendMessage("Tp command not implemented yet.");
-        return true;
+        return tpCommand.onCommand((Player) sender);
     }
 
     private boolean handleTpbCommand(CommandSender sender, String[] args) {
@@ -194,8 +195,7 @@ public final class BackupAccessor extends JavaPlugin {
             sender.sendMessage("You must be a player to use this command!");
             return true;
         }
-        sender.sendMessage("Tpb command not implemented yet.");
-        return true;
+        return tpbCommand.onCommand((Player) sender);
     }
 
     private boolean handleDestroyCommand(CommandSender sender, String[] args) {
