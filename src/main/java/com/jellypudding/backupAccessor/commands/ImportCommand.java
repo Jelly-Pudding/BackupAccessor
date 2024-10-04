@@ -78,27 +78,29 @@ public class ImportCommand {
     private void continueImportProcess(Player player) {
         World playerWorld = player.getWorld();
         String selectedBackup;
-        String backupPath;
+        String selectedTarBackup;
 
         switch (playerWorld.getEnvironment()) {
             case NORMAL:
                 selectedBackup = FileFunctions.getSelectedWorldBackup();
-                backupPath = FileFunctions.getTarDirectoryWorld();
+                selectedTarBackup = FileFunctions.getTarDirectoryWorld();
                 break;
             case NETHER:
                 selectedBackup = FileFunctions.getSelectedNetherBackup();
-                backupPath = FileFunctions.getTarDirectoryNether();
+                selectedTarBackup = FileFunctions.getTarDirectoryNether();
                 break;
             case THE_END:
                 selectedBackup = FileFunctions.getSelectedEndBackup();
-                backupPath = FileFunctions.getTarDirectoryEnd();
+                selectedTarBackup = FileFunctions.getTarDirectoryEnd();
                 break;
             default:
                 player.sendMessage(Component.text("Failed to identify the dimension: " + playerWorld.getEnvironment()).color(NamedTextColor.RED));
                 return;
         }
 
-        if (selectedBackup.isEmpty() || backupPath.isEmpty()) {
+        boolean isDirectoryBackup = FileFunctions.isDirectoryBackup(BackupType.WORLD);
+
+        if ((isDirectoryBackup && selectedBackup.isEmpty()) || (!isDirectoryBackup && selectedTarBackup.isEmpty())) {
             player.sendMessage(Component.text("No backup selected for this dimension.").color(NamedTextColor.RED));
             return;
         }
@@ -117,8 +119,8 @@ public class ImportCommand {
         });
 
         // Determine whether to use transferFiles or transferFromTar
-        if (FileFunctions.isTarBackup(BackupType.WORLD)) {
-            FileFunctions.transferFromTar(player, BackupType.WORLD, backupPath, regionsToImport, "", "", false);
+        if (!isDirectoryBackup) {
+            FileFunctions.transferFromTar(player, BackupType.WORLD, selectedTarBackup, regionsToImport, "", "", false);
         } else {
             CompletableFuture.runAsync(() -> {
                 boolean success = FileFunctions.transferFiles(player, BackupType.WORLD, selectedBackup,

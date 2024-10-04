@@ -200,7 +200,7 @@ public class FileFunctions {
         }
     }
 
-    private static boolean isDirectoryBackup(BackupType backupType) {
+    public static boolean isDirectoryBackup(BackupType backupType) {
         switch (backupType) {
             case WORLD:
                 return !tarFileWorld && !tarCompressedFileWorld && !tarBz2FileWorld;
@@ -460,14 +460,6 @@ public class FileFunctions {
         return "directory";
     }
 
-    public static boolean isTarBackup(BackupType backupType) {
-        if (backupType == BackupType.WORLD) {
-            return tarFileWorld || tarCompressedFileWorld || tarBz2FileWorld;
-        } else {
-            return tarFilePlayer || tarCompressedFilePlayer || tarBz2FilePlayer;
-        }
-    }
-
     public static String getSelectedWorldBackup() { return selectedWorldBackup; }
     public static String getSelectedNetherBackup() { return selectedNetherBackup; }
     public static String getSelectedEndBackup() { return selectedEndBackup; }
@@ -551,7 +543,7 @@ public class FileFunctions {
                         String destination = backupType == BackupType.WORLD ?
                                 "/BackupAccessor/region/" + desiredFile :
                                 "/playerdata/" + dummyUUID + ".dat";
-                        if (!extractAndCopyFile(player, backupType, tempDir, tarInput, entry, destination)) {
+                        if (!extractAndCopyFile(player, backupType, tempDir, tarInput, entry, destination, tarFilePath)) {
                             return false;
                         }
                         filesToTransfer.remove(desiredFile);
@@ -561,7 +553,13 @@ public class FileFunctions {
             }
 
             if (!filesToTransfer.isEmpty()) {
-                player.sendMessage(Component.text("Error: Some files were not found in the tar archive.").color(NamedTextColor.RED));
+                Component message = Component.text("Error: The following files were not found in the tar archive:").color(NamedTextColor.RED)
+                        .append(Component.newline());
+                for (String missingFile : filesToTransfer) {
+                    message = message.append(Component.text("- " + missingFile).color(NamedTextColor.YELLOW))
+                            .append(Component.newline());
+                }
+                player.sendMessage(message);
                 return false;
             }
 
@@ -576,7 +574,7 @@ public class FileFunctions {
         }
     }
 
-    private static boolean extractAndCopyFile(Player player, BackupType backupType, File tempDir, TarArchiveInputStream tarInput, TarArchiveEntry entry, String destination) throws IOException {
+    private static boolean extractAndCopyFile(Player player, BackupType backupType, File tempDir, TarArchiveInputStream tarInput, TarArchiveEntry entry, String destination, String tarFilePath) throws IOException {
         File outputFile = new File(tempDir, entry.getName());
         outputFile.getParentFile().mkdirs();
 
@@ -588,7 +586,13 @@ public class FileFunctions {
         destinationFile.getParentFile().mkdirs();
         Files.copy(outputFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        player.sendMessage(Component.text("Imported the " + backupType.name().toLowerCase() + " file " + entry.getName()).color(NamedTextColor.GREEN));
+        player.sendMessage(Component.text("Imported the " + backupType.name().toLowerCase() + " file:")
+                .color(NamedTextColor.GREEN)
+                .append(Component.newline())
+                .append(Component.text("Tar file: " + tarFilePath).color(NamedTextColor.YELLOW))
+                .append(Component.newline())
+                .append(Component.text("Path within tar: " + entry.getName()).color(NamedTextColor.YELLOW)));
+
         return true;
     }
 
@@ -610,6 +614,4 @@ public class FileFunctions {
             ImportCommand.completeImport(player);
         });
     }
-
-
 }
