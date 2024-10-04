@@ -6,7 +6,11 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.entity.Player;
+import net.kyori.adventure.util.TriState;
+
+import org.bukkit.command.CommandSender;
 
 import java.io.File;
 
@@ -32,6 +36,38 @@ public class WorldFunctions {
         return world.getLoadedChunks().length > 0;
     }
 
+    public static void createBackupAccessorWorld(Player player) {
+        if (doesBackupAccessorWorldExist()) {
+            player.sendMessage(Component.text("BackupAccessor world already exists.").color(NamedTextColor.RED));
+            return;
+        }
+
+        if (FileFunctions.isBackupAccessorEmpty()) {
+            player.sendMessage(Component.text("BackupAccessor has no region files. Make sure you use /backupaccessor import first.").color(NamedTextColor.RED));
+            return;
+        }
+
+        WorldCreator creator = new WorldCreator(BACKUP_WORLD_NAME);
+        creator.environment(World.Environment.NORMAL);
+        creator.generateStructures(false);
+        creator.generator(new ChunkGenerator() {
+            // This creates a completely empty world
+        });
+        creator.generatorSettings("{\"structures\": {\"structures\": {}}, \"layers\": [{\"block\": \"air\", \"height\": 1}], \"biome\":\"the_void\"}");
+        creator.keepSpawnLoaded(TriState.FALSE);
+        creator.hardcore(false);
+
+        World world = creator.createWorld();
+
+        if (world != null) {
+            world.setAutoSave(false);
+            adjustWorldBorderForBackupAccessor(world);
+            player.sendMessage(Component.text("Successfully created and loaded BackupAccessor world.").color(NamedTextColor.GREEN));
+        } else {
+            player.sendMessage(Component.text("Failed to create BackupAccessor world.").color(NamedTextColor.RED));
+        }
+    }
+
     public static void loadBackupAccessorWorldAndAdjustBorder(Player player, boolean verbose) {
         if (doesBackupAccessorWorldExist()) {
             World world = Bukkit.getWorld(BACKUP_WORLD_NAME);
@@ -51,7 +87,7 @@ public class WorldFunctions {
         }
     }
 
-    public static void unloadThenDeleteBackupAccessor(Player player) {
+    public static void unloadThenDeleteBackupAccessor(CommandSender sender) {
         World world = Bukkit.getWorld(BACKUP_WORLD_NAME);
         if (world != null) {
             for (Player p : world.getPlayers()) {
@@ -61,15 +97,15 @@ public class WorldFunctions {
                 // World is unloaded, now we need to delete its files
                 File worldFolder = world.getWorldFolder();
                 if (FileFunctions.deleteDirectory(worldFolder)) {
-                    player.sendMessage(Component.text("Successfully deleted BackupAccessor world.").color(NamedTextColor.GREEN));
+                    sender.sendMessage(Component.text("Successfully deleted BackupAccessor world.").color(NamedTextColor.GREEN));
                 } else {
-                    player.sendMessage(Component.text("Failed to delete BackupAccessor world files.").color(NamedTextColor.RED));
+                    sender.sendMessage(Component.text("Failed to delete BackupAccessor world files.").color(NamedTextColor.RED));
                 }
             } else {
-                player.sendMessage(Component.text("Failed to unload BackupAccessor world.").color(NamedTextColor.RED));
+                sender.sendMessage(Component.text("Failed to unload BackupAccessor world.").color(NamedTextColor.RED));
             }
         } else {
-            player.sendMessage(Component.text("BackupAccessor world does not exist.").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("BackupAccessor world does not exist.").color(NamedTextColor.YELLOW));
         }
     }
 

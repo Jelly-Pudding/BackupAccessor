@@ -140,6 +140,16 @@ public class FileFunctions {
         return false;
     }
 
+    public static boolean isBackupAccessorEmpty() {
+        File worldFolder = new File(BackupAccessor.getInstance().getWorldPath(), WorldFunctions.BACKUP_WORLD_NAME);
+        File regionFolder = new File(worldFolder, "region");
+        if (!regionFolder.exists() || !regionFolder.isDirectory()) {
+            return true;
+        }
+        File[] regionFiles = regionFolder.listFiles((dir, name) -> name.endsWith(".mca"));
+        return regionFiles == null || regionFiles.length == 0;
+    }
+
     public static boolean verifyAndSetBackupType(String playerGivenName, BackupType backupType) {
         List<String> backupPaths = backupType == BackupType.WORLD ?
                 BackupAccessor.getInstance().getWorldBackupPaths() :
